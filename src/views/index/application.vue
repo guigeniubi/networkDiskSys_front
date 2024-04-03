@@ -87,7 +87,7 @@ export default {
       searchModel: {
         pageNo: 1,
         pageSize: 10,
-        fileType:"pic"
+        fileType:"application"
       },
       fileList: [],
       rules: {

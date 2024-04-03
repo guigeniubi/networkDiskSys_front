@@ -1,184 +1,212 @@
 <template>
-  <div id="app">
-    <!-- 上传组件 -->
-    <el-upload action drag :auto-upload="false" :show-file-list="false" :on-change="handleChange">
-      <i class="el-icon-upload"></i>
-      <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
-      <div class="el-upload__tip" slot="tip">大小不超过 10G</div>
-    </el-upload>
+  <div>
+    <!-- 侧边栏 -->
+    <el-drawer title="文件上传" :visible="showSidebar" direction="ltr" :before-close="beforeClose">
+      <!-- 文件上传组件 -->
+      <FileUploadComponent />
+    </el-drawer>
+    <!--搜索栏-->
+    <el-card id="search">
+      <el-row><!--24分-->
+        <el-col :span="4">
+          <el-button type="primary" @click="showUploadSidebar">上传<i
+              class="el-icon-upload el-icon--right"></i></el-button></el-col>
+        <el-col :span="20" align="right">
+          <el-input v-model="searchModel.fileName" placeholder="文件名" clearable></el-input>
+          <el-button @click='getFileList' type="primary" round icon="el-icon-search">查询</el-button></el-col>
 
-    <!-- 进度显示 -->
-    <div class="progress-box">
-      <span>上传进度：{{ percent.toFixed() }}%</span>
-      <el-button type="primary" size="mini" @click="handleClickBtn">{{ upload | btnTextFilter }}</el-button>
-    </div>
+      </el-row>
+    </el-card>
 
-    <!-- 展示上传成功的视频 -->
-    <div v-if="videoUrl">
-      <video :src="videoUrl" controls />
-    </div>
+
+    <!--结果列表-->
+    <el-card>
+      <el-table :data="fileList" stripe style="width: 100%">
+        <el-table-column label="#" width="80">
+          <template slot-scope="scope">
+            <!-- (pageNo-1)*pageSize+index+1 -->
+            {{ (searchModel.pageNo - 1) * searchModel.pageSize + scope.$index + 1 }}
+          </template>
+          9
+        </el-table-column>
+
+        <el-table-column prop="fileName" label="文件名" width="260">
+        </el-table-column>
+
+        <el-table-column prop="updateTime" label="修改时间">
+        </el-table-column>
+        <el-table-column prop="fileSize" label="大小">
+        </el-table-column>
+        <el-table-column label="操作" width="180">
+          <template slot-scope="scope">
+            <el-button @click="rename(scope.row.fileId)" type="primary" icon="el-icon-edit" size="mini"
+              circle></el-button>
+            <el-button type="primary" icon="el-icon-share" size="mini" circle></el-button>
+            <el-button type="primary" icon="el-icon-download" size="mini" circle></el-button>
+            <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
+              circle></el-button>
+
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+    <!--分页组件-->
+    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
+      :current-page="searchModel.pageNo" :page-sizes="[5, 10, 20, 50]" :page-size="searchModel.pageSize"
+      layout="total, sizes, prev, pager, next, jumper" :total="total">
+    </el-pagination>
+
+
   </div>
+
+  <!-- <Upload ref="uploadComponent">asd</Upload> -->
 </template>
 
 <script>
-import SparkMD5 from "spark-md5"
-import fileApi from "../../api/file"
+import fileApi from '@/api/file'
+import roleApi from '@/api/roleManager'
+import menuApi from '@/api/menuManger'
+import FileUploadComponent from "@/components/FileUploadComponent.vue";
+
 export default {
-  name: 'FileUploadComponent',
-  filters: {
-    btnTextFilter(val) {
-      return val ? '暂停' : '继续'
-    }
+  components: {
+    FileUploadComponent
   },
   data() {
     return {
-      percent: 0,
-      videoUrl: '',
-      upload: true,
-      percentCount: 0
+      menuList: [],
+      menuProps: {
+        children: 'children',
+        label: 'title'
+      },
+      formLabelWidth: '130px',
+      roleForm: {},
+      dialogFormVisible: false,
+      title: "",
+      total: 0,
+      searchModel: {
+        pageNo: 1,
+        pageSize: 10,
+        fileType:"audio"
+      },
+      fileList: [],
+      rules: {
+        roleName: [
+          { required: true, message: '请输入角色名称', trigger: 'blur' },
+          { min: 2, max: 20, message: '长度在2  到 20 个字符', trigger: 'blur' }
+        ],
+        roleDesc: [
+          { required: true, message: '请输入角色描述', trigger: 'blur' },
+          { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+        ],
+
+      },
+      showSidebar: false, // 控制侧边栏的显示与隐藏
     }
   },
   methods: {
-    async handleChange(file) {
-      if (!file) return
-      this.percent = 0
-      this.videoUrl = ''
-      const fileObj = file.raw
-      if (fileObj.size <= 5 * 1024 * 1024) {
-        // 如果小于5M，则直接上传小文件
-        try {
-          console.log("smallFile-----------");
-          const formData = new FormData()
-          formData.append('file', fileObj)
-          const response = await fileApi.uploadSingle(formData)
-          console.log(response);
-          if (response && response.data && response.data.filePath) {
-            // 文件上传成功，可以根据后端返回的文件路径进行处理
-            this.videoUrl = response.data.filePath
-            console.log(videoUrl);
-          }
-        } catch (error) {
-          console.error('上传失败：', error)
-          // 处理上传失败的逻辑
-        }
-        return
-      }
-
-      // 获取文件并转成 ArrayBuffer 对象
-
-      let buffer
-      try {
-        buffer = await this.fileToBuffer(fileObj)
-      } catch (e) {
-        console.log(e)
-      }
-
-      // 将文件按固定大小（2M）进行切片，注意此处同时声明了多个常量
-      const chunkSize = 2097152,
-        chunkList = [], // 保存所有切片的数组
-        chunkListLength = Math.ceil(fileObj.size / chunkSize), // 计算总共多个切片
-        suffix = /\.([0-9A-z]+)$/.exec(fileObj.name)[1] // 文件后缀名
-
-      // 根据文件内容生成 hash 值
-      const spark = new SparkMD5.ArrayBuffer()
-      spark.append(buffer)
-      const hash = spark.end()
-
-      // 生成切片，这里后端要求传递的参数为字节数据块（chunk）和每个数据块的文件名（fileName）
-      let curChunk = 0 // 切片时的初始位置
-      for (let i = 0; i < chunkListLength; i++) {
-        const item = {
-          chunk: fileObj.slice(curChunk, curChunk + chunkSize),
-          fileName: `${hash}_${i}.${suffix}` // 文件名规则按照 hash_1.jpg 命名
-        }
-        curChunk += chunkSize
-        chunkList.push(item)
-      }
-      this.chunkList = chunkList // sendRequest 要用到
-      this.hash = hash // sendRequest 要用到
-      this.sendRequest()
-    },
-
-    // 发送请求
-    sendRequest() {
-      const totalChunks = this.chunkList.length; // 总切片数量
-      const progressPerChunk = 100 / totalChunks; // 每个切片上传所占的进度百分比
-      const requestList = [] // 请求集合
-      this.chunkList.forEach((item, index) => {
-        const fn = () => {
-          const formData = new FormData()
-          formData.append('chunk', item.chunk)
-          formData.append('filename', item.fileName)
-          formData.append('index', index);
-          return fileApi.postChunks(formData).then(res => {
-            if (res.code === 20000) { // 成功
-
-              this.percent += progressPerChunk // 改变进度
-              this.chunkList.splice(index, 1) // 一旦上传成功就删除这一个 chunk，方便断点续传
-            }
-          })
-        }
-        requestList.push(fn)
-      })
-
-      let i = 0 // 记录发送的请求个数
-      // 文件切片全部发送完毕后，需要请求 '/merge' 接口，把文件的 hash 传递给服务器
-      const complete = () => {
-        fileApi.merge(this.hash).then(res => {
-          if (res.code === 0) { // 请求发送成功
-            // this.videoUrl = res.data.path
-          }
-        })
-      }
-      const send = async () => {
-        if (!this.upload) return
-        if (i >= requestList.length) {
-          // 发送完毕
-          complete()
-          return
-        }
-        await requestList[i]()
-        i++
-        send()
-      }
-      send() // 发送请求
-    },
-
-    // 按下暂停按钮
-    handleClickBtn() {
-      this.upload = !this.upload
-      // 如果不暂停则继续上传
-      if (this.upload) this.sendRequest()
-    },
-
-    // 将 File 对象转为 ArrayBuffer 
-    fileToBuffer(file) {
-      return new Promise((resolve, reject) => {
-        const fr = new FileReader()
-        fr.onload = e => {
-          resolve(e.target.result)
-        }
-        fr.readAsArrayBuffer(file)
-        fr.onerror = () => {
-          reject(new Error('转换文件格式发生错误'))
-        }
-      })
+    getAllMenu() {
+      menuApi.getAllMenu().then(response => {
+        this.menuList = response.data;
+      });
     }
-  }
-}
+    ,
+    getFileList() {
+      console.log(this.searchModel);
+      fileApi.getFileList(this.searchModel).then(response => {
+        this.fileList = response.data.rows;
+        this.total = response.data.total;
+      });
+
+    },
+    saveRole() {
+      this.$refs.roleFormRef.validate((valid) => {
+        if (valid) {
+          let checkedKeys = this.$refs.menuRef.getCheckedKeys();
+          let halfCheckedKeys = this.$refs.menuRef.getHalfCheckedKeys();
+          this.roleForm.menuIdList = checkedKeys.concat(halfCheckedKeys);
+
+          //提交给后台
+          roleApi.saveRole(this.roleForm).then(response => {
+            this.$message({
+              message: response.message,
+              type: 'success'
+            });
+            this.dialogFormVisible = false;
+            this.getFileList();
+
+          });
+        }
+        else {
+          console.log('error submit!!');
+          return false;
+        }
+      });
+    },
+    clearForm() {
+      this.roleForm = {};
+      this.$refs.roleFormRef.clearValidate();
+      // this.$refs.menuRef.setCheckKeys([]);
+    },
+    rename(fileId) {
+
+    },
+
+    handleSizeChange(pageSize) {
+      this.searchModel.pageSize = pageSize;
+      this.getFileList();
+    },
+    handleCurrentChange(pageNo) {
+      this.searchModel.pageNo = pageNo;
+      this.getFileList();
+    },
+    deleteFile(file) {
+      this.$confirm(`您确认删除文件${file.fileName}?`, '此操作将永久删除该文件, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        fileApi.deleteFileByID(file.fileId).then(response => {
+          this.$message({
+            type: 'success',
+            message: response.message
+          });
+          this.getFileList()
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除!'
+        });
+      });
+    },
+    showUploadSidebar() {
+      this.showSidebar = true;
+    },
+    // 侧边栏关闭前的回调
+    beforeClose(done) {
+      this.showSidebar = false;
+      this.getFileList()
+      done();
+    },
+
+  },
+  created() {
+    this.getFileList();
+    this.getAllMenu();
+  },
+
+};
+
 </script>
 
-<style scoped>
-.progress-box {
-  box-sizing: border-box;
-  width: 360px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-  padding: 8px 10px;
-  background-color: #ecf5ff;
-  font-size: 14px;
-  border-radius: 4px;
+<style>
+#search .el-input {
+  width: 200px;
+  margin-right: 10px;
+}
+
+.el-dialog .el-input {
+  width: 85%;
 }
 </style>

@@ -8,26 +8,26 @@ export default {
       params: {
         pageNo: searchModel.pageNo,
         pageSize: searchModel.pageSize,
-        fileName: searchModel.fileName,
-        type: searchModel.type
+        fileName: searchModel?.fileName,
+        fileType: searchModel?.fileType,
       },
     });
   },
-  uploadSingle(formData){
+  uploadSingle(formData) {
     return request({
-      url:'/file/upload/single',
-      method:'post',
-      headers: { 'Content-Type': 'multipart/form-data' },
-      data: formData
-    })
+      url: "/file/upload/single",
+      method: "post",
+      headers: { "Content-Type": "multipart/form-data" },
+      data: formData,
+    });
   },
   postChunks(formData) {
     return request({
-      url: '/file/upload/chunk',
-      method: 'post',
-      headers: { 'Content-Type': 'multipart/form-data' },
-      data: formData
-    })
+      url: "/file/upload/chunk",
+      method: "post",
+      headers: { "Content-Type": "multipart/form-data" },
+      data: formData,
+    });
   },
   addRole(role) {
     return request({
@@ -36,13 +36,12 @@ export default {
       data: role,
     });
   },
-  merge(hash) {
+  merge(hash, fileName) {
     return request({
-      url: '/file/mergeChunks',
-      method: 'post',
-      params: { hash: hash }
-    })
-
+      url: "/file/mergeChunks",
+      method: "post",
+      params: { hash: hash, fileName: fileName },
+    });
   },
   getRoleById(id) {
     return request({
@@ -70,10 +69,10 @@ export default {
       method: "delete",
     });
   },
-  rename(id){
+  rename(id) {
     return request({
       url: `/file/rename/${id}`,
       method: "put",
-    })
-  }
+    });
+  },
 };
