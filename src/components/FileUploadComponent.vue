@@ -37,6 +37,8 @@ export default {
       upload: true,
       percentCount: 0,
       originalFileName: '', // 记录文件的原始名
+      uploadedChunks: [], // 已上传的切片索引
+      chunkList: []
     }
   },
   methods: {
@@ -64,6 +66,7 @@ export default {
         }
         return
       }
+
       this.originalFileName = file.name;
       // 获取文件并转成 ArrayBuffer 对象
 
@@ -84,16 +87,28 @@ export default {
       const spark = new SparkMD5.ArrayBuffer()
       spark.append(buffer)
       const hash = spark.end()
+      // 发送请求，获取已上传的切片索引
+      try {
+        const response = await fileApi.getUploadedChunks(hash)
+        console.log(response);
+        if (response.code === 20000 && response.data) {
+          this.uploadedChunks = response.data
+        }
+      } catch (error) {
+        console.error('获取已上传的切片索引失败：', error)
+      }
 
       // 生成切片，这里后端要求传递的参数为字节数据块（chunk）和每个数据块的文件名（fileName）
       let curChunk = 0 // 切片时的初始位置
       for (let i = 0; i < chunkListLength; i++) {
-        const item = {
-          chunk: fileObj.slice(curChunk, curChunk + chunkSize),
-          fileName: `${hash}_${i}.${suffix}` // 文件名规则按照 hash_1.jpg 命名
+        if (!this.uploadedChunks.includes(i)) { // 如果切片未上传，则添加到上传列表
+          const item = {
+            chunk: fileObj.slice(curChunk, curChunk + chunkSize),
+            fileName: `${hash}.${suffix}` // 文件名规则按照 hash.jpg 命名
+          }
+          chunkList.push(item)
         }
         curChunk += chunkSize
-        chunkList.push(item)
       }
       this.chunkList = chunkList // sendRequest 要用到
       this.hash = hash // sendRequest 要用到
@@ -125,8 +140,13 @@ export default {
       let i = 0 // 记录发送的请求个数
       // 文件切片全部发送完毕后，需要请求 '/merge' 接口，把文件的 hash 传递给服务器
       const complete = () => {
-        fileApi.merge(this.hash,this.originalFileName).then(res => {
-          if (res.code === 0) { // 请求发送成功
+        fileApi.merge(this.hash, this.originalFileName).then(res => {
+          if (res.code === 20000) { // 请求发送成功
+            this.$message({
+              type: 'success',
+              message: res.message
+            });
+            this.percent = 0;
             // this.videoUrl = res.data.path
           }
         })

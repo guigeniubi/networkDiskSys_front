@@ -1,6 +1,13 @@
 import request from "@/utils/request";
 
 export default {
+  getUploadedChunks(hash) {
+    return request({
+      url: "/file/uploaded",
+      method: "get",
+      params: { hash: hash },
+    });
+  },
   getFileList(searchModel) {
     return request({
       url: "/file/list",
