@@ -1,10 +1,16 @@
 <template>
   <div>
+    <!-- 侧边栏 -->
+    <el-drawer title="文件上传" :visible="showSidebar" direction="ltr" :before-close="beforeClose">
+      <!-- 文件上传组件 -->
+      <FileUploadComponent />
+    </el-drawer>
     <!--搜索栏-->
     <el-card id="search">
       <el-row><!--24分-->
         <el-col :span="4">
-          <el-button type="primary"  @click="openUploadDialog">上传<i class="el-icon-upload el-icon--right"></i></el-button></el-col>
+          <el-button type="primary" @click="showUploadSidebar">上传<i
+              class="el-icon-upload el-icon--right"></i></el-button></el-col>
         <el-col :span="20" align="right">
           <el-input v-model="searchModel.fileName" placeholder="文件名" clearable></el-input>
           <el-button @click='getFileList' type="primary" round icon="el-icon-search">查询</el-button></el-col>
@@ -26,7 +32,7 @@
 
         <el-table-column prop="fileName" label="文件名" width="260">
         </el-table-column>
-        
+
         <el-table-column prop="updateTime" label="修改时间">
         </el-table-column>
         <el-table-column prop="fileSize" label="大小">
@@ -35,11 +41,11 @@
           <template slot-scope="scope">
             <el-button @click="rename(scope.row.fileId)" type="primary" icon="el-icon-edit" size="mini"
               circle></el-button>
-              <el-button type="primary" icon="el-icon-share" size="mini" circle></el-button>
-              <el-button type="primary" icon="el-icon-download" size="mini" circle></el-button>
+            <el-button type="primary" icon="el-icon-share" size="mini" circle></el-button>
+            <el-button type="primary" icon="el-icon-download" size="mini" circle></el-button>
             <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
               circle></el-button>
-            
+
           </template>
         </el-table-column>
       </el-table>
@@ -50,7 +56,7 @@
       layout="total, sizes, prev, pager, next, jumper" :total="total">
     </el-pagination>
 
-   
+
   </div>
 
   <!-- <Upload ref="uploadComponent">asd</Upload> -->
@@ -60,11 +66,11 @@
 import fileApi from '@/api/file'
 import roleApi from '@/api/roleManager'
 import menuApi from '@/api/menuManger'
-import Upload from '@/components/Upload/upload.vue'
+import FileUploadComponent from "@/components/FileUploadComponent.vue";
 
 export default {
   components: {
-    Upload // 注册上传组件
+    FileUploadComponent
   },
   data() {
     return {
@@ -94,7 +100,8 @@ export default {
           { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
         ],
 
-      }
+      },
+      showSidebar: false, // 控制侧边栏的显示与隐藏
     }
   },
   methods: {
@@ -141,7 +148,7 @@ export default {
       // this.$refs.menuRef.setCheckKeys([]);
     },
     rename(fileId) {
-      
+
     },
 
     handleSizeChange(pageSize) {
@@ -158,13 +165,13 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        // roleApi.deleteRoleByID(role.roleId).then(response => {
-        //   this.$message({
-        //     type: 'success',
-        //     message: response.message
-        //   });
-        //   this.getFileList()
-        // })
+        fileApi.deleteFileByID(file.fileId).then(response => {
+          this.$message({
+            type: 'success',
+            message: response.message
+          });
+          this.getFileList()
+        })
       }).catch(() => {
         this.$message({
           type: 'info',
@@ -172,9 +179,15 @@ export default {
         });
       });
     },
-    openUploadDialog() {
-      this.$refs.uploadComponent.openDialog();
-    }
+    showUploadSidebar() {
+      this.showSidebar = true;
+    },
+    // 侧边栏关闭前的回调
+    beforeClose(done) {
+      this.showSidebar = false;
+      this.getFileList()
+      done();
+    },
 
   },
   created() {

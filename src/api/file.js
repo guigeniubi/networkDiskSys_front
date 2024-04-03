@@ -66,14 +66,14 @@ export default {
   },
   deleteFileByID(id) {
     return request({
-      url: `/file/${id}`,
+      url: `/file/delete/${id}`,
       method: "delete",
     });
   },
-  getAllRoleList() {
+  rename(id){
     return request({
-      url: "/role/all",
-      method: "get",
-    });
-  },
+      url: `/file/rename/${id}`,
+      method: "put",
+    })
+  }
 };

@@ -24,7 +24,7 @@
 import SparkMD5 from "spark-md5"
 import fileApi from "../../api/file"
 export default {
-  name: 'App3',
+  name: 'FileUploadComponent',
   filters: {
     btnTextFilter(val) {
       return val ? '暂停' : '继续'
