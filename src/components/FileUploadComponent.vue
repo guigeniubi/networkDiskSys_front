@@ -53,12 +53,14 @@ export default {
           console.log("smallFile-----------");
           const formData = new FormData()
           formData.append('file', fileObj)
-          const response = await fileApi.uploadSingle(formData)
-          console.log(response);
-          if (response && response.data && response.data.filePath) {
+          const res = await fileApi.uploadSingle(formData)
+          if (res && res.message) {
             // 文件上传成功，可以根据后端返回的文件路径进行处理
-            this.videoUrl = response.data.filePath
-            console.log(videoUrl);
+            this.$message({
+              type: 'success',
+              message: res.message
+            });
+            this.percent = 0;
           }
         } catch (error) {
           console.error('上传失败：', error)

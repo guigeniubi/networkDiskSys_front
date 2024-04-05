@@ -27,10 +27,28 @@
             <!-- (pageNo-1)*pageSize+index+1 -->
             {{ (searchModel.pageNo - 1) * searchModel.pageSize + scope.$index + 1 }}
           </template>
-          9
+
         </el-table-column>
 
         <el-table-column prop="fileName" label="文件名" width="260">
+          <template slot-scope="scope">
+            <template v-if="!scope.row.editing">
+              {{ scope.row.fileName }}
+            </template>
+            <template v-if="scope.row.editing">
+              <el-input v-model="scope.row.newFileName" size="mini"></el-input>
+
+            </template>
+            <el-popover ref="popover" trigger="click" placement="top-start" v-model="scope.row.popoverVisible">
+              <div>
+                <p>重命名</p>
+                <div style="text-align: right; margin-top: 10px;">
+                  <el-button size="mini" type="primary" @click="saveRename(scope.row)">确认</el-button>
+                  <el-button size="mini" @click="cancelEdit(scope.row)">取消</el-button>
+                </div>
+              </div>
+            </el-popover>
+          </template>
         </el-table-column>
 
         <el-table-column prop="updateTime" label="修改时间">
@@ -39,8 +57,7 @@
         </el-table-column>
         <el-table-column label="操作" width="180">
           <template slot-scope="scope">
-            <el-button @click="rename(scope.row.fileId)" type="primary" icon="el-icon-edit" size="mini"
-              circle></el-button>
+            <el-button @click="toggleEdit(scope.row)" type="primary" icon="el-icon-edit" size="mini" circle></el-button>
             <el-button type="primary" icon="el-icon-share" size="mini" circle></el-button>
             <el-button type="primary" icon="el-icon-download" size="mini" circle></el-button>
             <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
@@ -59,7 +76,6 @@
 
   </div>
 
-  <!-- <Upload ref="uploadComponent">asd</Upload> -->
 </template>
 
 <script>
@@ -95,16 +111,52 @@ export default {
           { required: true, message: '请输入角色名称', trigger: 'blur' },
           { min: 2, max: 20, message: '长度在2  到 20 个字符', trigger: 'blur' }
         ],
-        roleDesc: [
-          { required: true, message: '请输入角色描述', trigger: 'blur' },
-          { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
-        ],
 
       },
       showSidebar: false, // 控制侧边栏的显示与隐藏
     }
   },
   methods: {
+    // 切换编辑状态
+    toggleEdit(row) {
+      if (!row.editing) {
+        this.enterEdit(row);
+        row.popoverVisible = true;
+      } else {
+        row.editing = false;
+        row.popoverVisible = false;
+        // 在取消编辑时，恢复原始文件名
+      }
+    },
+    // 进入编辑状态
+    enterEdit(row) {
+      this.$set(row, 'editing', true);
+
+    },
+    // 保存修改
+    saveRename(row) {
+      let fileId = row.fileId;
+      let newFileName = row.newFileName;
+
+        fileApi.saveRename(fileId,newFileName)
+          .then(res => {
+            this.$message({
+              type: 'success',
+              message: res.message
+            });
+            row.editing = false;
+            row.popoverVisible = false;
+            // 刷新文件列表
+            this.getFileList();
+          })
+          .catch(error => {
+            this.$message.error('重命名失败：' + error.message);
+          });
+    },
+    cancelEdit(row) {
+      row.editing = false;
+      row.popoverVisible = false;
+    },
     getAllMenu() {
       menuApi.getAllMenu().then(response => {
         this.menuList = response.data;
@@ -147,9 +199,7 @@ export default {
       this.$refs.roleFormRef.clearValidate();
       // this.$refs.menuRef.setCheckKeys([]);
     },
-    rename(fileId) {
 
-    },
 
     handleSizeChange(pageSize) {
       this.searchModel.pageSize = pageSize;

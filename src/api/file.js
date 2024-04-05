@@ -76,9 +76,10 @@ export default {
       method: "delete",
     });
   },
-  rename(id) {
+  saveRename(id, fileName) {
     return request({
       url: `/file/rename/${id}`,
+      params: {  fileName: fileName },
       method: "put",
     });
   },
