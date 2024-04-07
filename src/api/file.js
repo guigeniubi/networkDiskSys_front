@@ -36,13 +36,6 @@ export default {
       data: formData,
     });
   },
-  addRole(role) {
-    return request({
-      url: "/role",
-      method: "post",
-      data: role,
-    });
-  },
   merge(hash, fileName) {
     return request({
       url: "/file/mergeChunks",
@@ -50,13 +43,13 @@ export default {
       params: { hash: hash, fileName: fileName },
     });
   },
-  getRoleById(id) {
-    return request({
-      // url:'/role/'+id,
-      url: `/role/${id}`,
-      method: "get",
-    });
-  },
+  // getRoleById(id) {
+  //   return request({
+  //     // url:'/role/'+id,
+  //     url: `/role/${id}`,
+  //     method: "get",
+  //   });
+  // },
   updateFile(file) {
     return request({
       url: "/file",
@@ -79,8 +72,29 @@ export default {
   saveRename(id, fileName) {
     return request({
       url: `/file/rename/${id}`,
-      params: {  fileName: fileName },
+      params: { fileName: fileName },
       method: "put",
+    });
+  },
+  shareFile(fileId) {
+    return request({
+      url: `/share/file`,
+      params: { fileId: fileId },
+      method: "post",
+    });
+  },
+  addToMy(formData) {
+    return request({
+      url: `/share/addtomydrive`,
+      data: formData,
+      method: "post",
+    });
+  },
+  download(fileId) {
+    return request({
+      url: `/file/download/${fileId}`,
+      method: "get",
+      responseType:'blob'
     });
   },
 };

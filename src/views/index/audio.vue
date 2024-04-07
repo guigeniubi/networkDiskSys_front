@@ -58,8 +58,10 @@
         <el-table-column label="操作" width="180">
           <template slot-scope="scope">
             <el-button @click="toggleEdit(scope.row)" type="primary" icon="el-icon-edit" size="mini" circle></el-button>
-            <el-button type="primary" icon="el-icon-share" size="mini" circle></el-button>
-            <el-button type="primary" icon="el-icon-download" size="mini" circle></el-button>
+            <el-button @click="shareFile(scope.row.fileId)" type="primary" icon="el-icon-share" size="mini"
+              circle></el-button>
+            <el-button @click="download(scope.row.fileId)" type="primary" icon="el-icon-download" size="mini"
+              circle></el-button>
             <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
               circle></el-button>
 
@@ -72,6 +74,14 @@
       :current-page="searchModel.pageNo" :page-sizes="[5, 10, 20, 50]" :page-size="searchModel.pageSize"
       layout="total, sizes, prev, pager, next, jumper" :total="total">
     </el-pagination>
+    <el-dialog title="分享链接" :visible.sync="showShareDialog" width="30%" :before-close="handleClose">
+      <div>分享链接: <el-input v-model="shareLink" readonly /></div>
+      <div>分享密码: <el-input v-model="sharePassword" readonly /></div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showShareDialog = false">取消</el-button>
+        <el-button type="primary" @click="copyShareInfo">复制信息</el-button>
+      </span>
+    </el-dialog>
 
 
   </div>
@@ -114,6 +124,9 @@ export default {
 
       },
       showSidebar: false, // 控制侧边栏的显示与隐藏
+      showShareDialog: false, // 控制分享对话框的显示
+      shareLink: '', // 存储生成的分享链接
+      sharePassword: '', // 存储生成的分享密码
     }
   },
   methods: {
@@ -138,20 +151,20 @@ export default {
       let fileId = row.fileId;
       let newFileName = row.newFileName;
 
-        fileApi.saveRename(fileId,newFileName)
-          .then(res => {
-            this.$message({
-              type: 'success',
-              message: res.message
-            });
-            row.editing = false;
-            row.popoverVisible = false;
-            // 刷新文件列表
-            this.getFileList();
-          })
-          .catch(error => {
-            this.$message.error('重命名失败：' + error.message);
+      fileApi.saveRename(fileId, newFileName)
+        .then(res => {
+          this.$message({
+            type: 'success',
+            message: res.message
           });
+          row.editing = false;
+          row.popoverVisible = false;
+          // 刷新文件列表
+          this.getFileList();
+        })
+        .catch(error => {
+          this.$message.error('重命名失败：' + error.message);
+        });
     },
     cancelEdit(row) {
       row.editing = false;
@@ -238,6 +251,44 @@ export default {
       this.getFileList()
       done();
     },
+    shareFile(fileId) {
+      fileApi.shareFile(fileId)
+        .then(response => {
+          this.shareLink = response.data.shareLink;
+          this.sharePassword = response.data.sharePassword;
+
+          // 打开对话框
+          this.showShareDialog = true;
+        })
+        .catch(error => {
+          console.error('分享文件失败:', error);
+          this.$message.error('分享文件失败');
+        });
+    },
+    copyShareInfo() {
+      let shareInfo = `链接: ${this.shareLink}\n密码: ${this.sharePassword}`;
+      navigator.clipboard.writeText(shareInfo).then(() => {
+        this.$message.success('分享信息已复制到剪贴板');
+        this.showShareDialog = false; // 关闭对话框
+      }, (err) => {
+        console.error('无法复制到剪贴板', err);
+      });
+    },
+    handleClose() {
+      this.showShareDialog = false;
+    },
+    download(fileId) {
+      const downloadUrl = `http://localhost:9999/file/download/${fileId}`;
+      // 创建一个a标签
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      // 由于文件名是在后端通过Content-Disposition设置的，所以这里不需要设置下载文件名
+      // link.setAttribute('download', 'filename');
+      document.body.appendChild(link); // 必须将链接添加到DOM中才能正确触发下载
+      link.click(); // 模拟点击实现下载
+      document.body.removeChild(link); // 下载后移除元素
+    },
+
 
   },
   created() {
