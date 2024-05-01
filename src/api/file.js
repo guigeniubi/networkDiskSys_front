@@ -20,6 +20,16 @@ export default {
       },
     });
   },
+  getRecycleBinList(searchModel) {
+    return request({
+      url:`/file/recycleBinList`,
+      method:"get",
+      params:{
+        pageNo:searchModel.pageNo,
+        pageSize:searchModel.pageSize,
+      }
+    })
+  },
   uploadSingle(formData) {
     return request({
       url: "/file/upload/single",
@@ -69,6 +79,12 @@ export default {
       method: "delete",
     });
   },
+  moveToTrash(id) {
+    return request({
+      url: `/file/moveToTrash/${id}`,
+      method: "put",
+    });
+  },
   saveRename(id, fileName) {
     return request({
       url: `/file/rename/${id}`,
@@ -94,7 +110,7 @@ export default {
     return request({
       url: `/file/download/${fileId}`,
       method: "get",
-      responseType:'blob'
+      responseType: "blob",
     });
   },
 };

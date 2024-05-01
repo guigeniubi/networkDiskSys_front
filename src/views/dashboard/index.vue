@@ -1,71 +1,63 @@
 <template>
-  <div class="dashboard-container">
-    <div class="dashboard-text">{{ name }} 欢迎您！</div>
-
-
-
-    <!-- 保存到我的网盘表单 -->
-    <div class="">
-      <el-input v-model="shareLink" placeholder="链接" />
-      <el-input v-model="sharePassword" placeholder="密码" />
-      <el-button @click="addToMyDrive">保存</el-button>
+  <div class="dashboard">
+    <div class="charts">
+      <div class="chart" id="hadoop-chart-1"></div>
+      <div class="chart" id="hadoop-chart-2"></div>
+    </div>
+    <div class="stats">
+      <ul>
+        <li v-for="(value, name) in hadoopStats" :key="name">
+          {{ name }}: {{ value }}
+        </li>
+      </ul>
     </div>
   </div>
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import axios from 'axios'
-import fileApi from '@/api/file'
+// 导入图表库
+import ECharts from 'echarts';
+
 export default {
-  name: 'Dashboard',
   data() {
     return {
-      fileId: '',
-      shareLink: '',
-      sharePassword: '',
+      hadoopStats: {
+        '总容量': '10GB',
+        '已使用': '416.61MB',
+        // 更多数据...
+      },
+      // 图表数据...
     };
   },
-  computed: {
-    ...mapGetters([
-      'name'
-    ])
+  mounted() {
+    this.createChart('hadoop-chart-1', /* 图表1的数据 */);
+    this.createChart('hadoop-chart-2', /* 图表2的数据 */);
   },
   methods: {
-    async addToMyDrive() {
-      try {
-        const formData = new FormData()
-        formData.append('shareLink', this.shareLink)
-        formData.append('sharePassword', this.sharePassword)
-        const res = await fileApi.addToMy(formData)
-        if (res.code === 20000) {
-          this.shareLink=''
-          this.sharePassword=''
-          this.$message({
-            message: res.message,
-            type: 'success'
-          });
-        }
-      } catch (error) {
-        this.$message({
-            message: res.message,
-            type: 'error'
-          });
-      }
-    },
+    createChart(chartElementId, chartData) {
+      // 使用 ECharts 创建图表
+      let chart = ECharts.init(document.getElementById(chartElementId));
+      chart.setOption({
+        // 图表配置和数据
+      });
+    }
   }
 }
 </script>
 
-<style lang="scss" scoped>
+<style>
 .dashboard {
-  &-container {
-    margin: 30px;
-  }
+  display: flex;
+  justify-content: space-around;
+}
 
-  &-text {
-    font-size: 30px;
-    line-height: 46px;
-  }
+.chart {
+  width: 400px;
+  height: 400px;
+}
+
+.stats {
+  display: flex;
+  flex-direction: column;
 }
 </style>

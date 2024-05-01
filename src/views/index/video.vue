@@ -113,7 +113,7 @@ export default {
       searchModel: {
         pageNo: 1,
         pageSize: 10,
-        fileType:"video"
+        fileType: "video"
       },
       fileList: [],
       rules: {
@@ -223,12 +223,12 @@ export default {
       this.getFileList();
     },
     deleteFile(file) {
-      this.$confirm(`您确认删除文件${file.fileName}?`, '此操作将永久删除该文件, 是否继续?', '提示', {
+      this.$confirm(`移入后可在7天内恢复该文件, 是否继续?`, '您确认将文件移入回收站?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        fileApi.deleteFileByID(file.fileId).then(response => {
+        fileApi.moveToTrash(file.fileId).then(response => {
           this.$message({
             type: 'success',
             message: response.message
@@ -282,8 +282,6 @@ export default {
       // 创建一个a标签
       const link = document.createElement('a');
       link.href = downloadUrl;
-      // 由于文件名是在后端通过Content-Disposition设置的，所以这里不需要设置下载文件名
-      // link.setAttribute('download', 'filename');
       document.body.appendChild(link); // 必须将链接添加到DOM中才能正确触发下载
       link.click(); // 模拟点击实现下载
       document.body.removeChild(link); // 下载后移除元素

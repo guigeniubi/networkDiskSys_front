@@ -113,7 +113,7 @@ export default {
       searchModel: {
         pageNo: 1,
         pageSize: 10,
-        fileType:"pic"
+        fileType: "pic"
       },
       fileList: [],
       rules: {
@@ -223,12 +223,12 @@ export default {
       this.getFileList();
     },
     deleteFile(file) {
-      this.$confirm(`您确认删除文件${file.fileName}?`, '此操作将永久删除该文件, 是否继续?', '提示', {
+      this.$confirm(`移入后可在7天内恢复该文件, 是否继续?`, '您确认将文件移入回收站?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        fileApi.deleteFileByID(file.fileId).then(response => {
+        fileApi.moveToTrash(file.fileId).then(response => {
           this.$message({
             type: 'success',
             message: response.message
