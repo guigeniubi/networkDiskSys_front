@@ -50,13 +50,13 @@
             </el-popover>
           </template>
         </el-table-column>
-
         <el-table-column prop="updateTime" label="修改时间">
         </el-table-column>
         <el-table-column prop="fileSize" label="大小">
         </el-table-column>
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作">
           <template slot-scope="scope">
+            <el-button type="info" icon="el-icon-view" size="mini" circle @click="handlePreview(scope.row)"></el-button>
             <el-button @click="toggleEdit(scope.row)" type="primary" icon="el-icon-edit" size="mini" circle></el-button>
             <el-button @click="shareFile(scope.row.fileId)" type="primary" icon="el-icon-share" size="mini"
               circle></el-button>
@@ -64,7 +64,6 @@
               circle></el-button>
             <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
               circle></el-button>
-
           </template>
         </el-table-column>
       </el-table>
@@ -83,6 +82,27 @@
       </span>
     </el-dialog>
 
+    <el-dialog :visible.sync="showPreviewDialog" title="文件预览" width="80%">
+      <div class="preview-container" v-if="previewUrl">
+        <img v-if="previewType === 'image'" :src="previewUrl" alt="Image Preview" class="preview-image" />
+        <video v-if="previewType === 'video'" controls class="preview-video">
+          <source :src="previewUrl" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <audio v-if="previewType === 'audio'" controls class="preview-audio">
+          <source :src="previewUrl" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+      <div v-else>
+        文件格式不支持预览
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showPreviewDialog = false">关闭</el-button>
+      </span>
+    </el-dialog>
+
+
 
   </div>
 
@@ -100,6 +120,9 @@ export default {
   },
   data() {
     return {
+      showPreviewDialog: false,
+      previewUrl: null,
+      previewType: null,
       menuList: [],
       menuProps: {
         children: 'children',
@@ -222,6 +245,28 @@ export default {
       this.searchModel.pageNo = pageNo;
       this.getFileList();
     },
+    handlePreview(row) {
+      const fileType = this.getFileType(row.fileType); // 根据文件类型选择预览方式
+      fileApi.previewFile(row.fileId)
+        .then(response => {
+          const url = window.URL.createObjectURL(new Blob([response.data], { type: row.fileType }));
+          console.log(url);
+          this.previewUrl = url;
+          this.previewType = fileType;
+          console.log(fileType);
+          this.showPreviewDialog = true;
+        })
+        .catch(error => {
+          console.error("Error during file preview:", error);
+          this.$message.error(`文件预览失败: ${error.message || '未知错误'}`);
+        });
+    },
+    getFileType(fileType) {
+      if (fileType.startsWith("image/")) return 'image';
+      if (fileType.startsWith("video/")) return 'video';
+      if (fileType.startsWith("audio/")) return 'audio';
+      return 'other'; // 其他类型用其他方式预览
+    },
     deleteFile(file) {
       this.$confirm(`移入后可在7天内恢复该文件, 是否继续?`, '您确认将文件移入回收站?', '提示', {
         confirmButtonText: '确定',
@@ -282,6 +327,8 @@ export default {
       // 创建一个a标签
       const link = document.createElement('a');
       link.href = downloadUrl;
+      // 由于文件名是在后端通过Content-Disposition设置的，所以这里不需要设置下载文件名
+      // link.setAttribute('download', 'filename');
       document.body.appendChild(link); // 必须将链接添加到DOM中才能正确触发下载
       link.click(); // 模拟点击实现下载
       document.body.removeChild(link); // 下载后移除元素
@@ -306,5 +353,35 @@ export default {
 
 .el-dialog .el-input {
   width: 85%;
+}
+
+.preview-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  /* 固定高度 */
+}
+
+.preview-image,
+.preview-video {
+  max-height: 100%;
+  /* 高度自适应 */
+  width: auto;
+  /* 宽度自适应 */
+}
+
+.preview-video {
+  max-width: 100%;
+  /* 视频宽度自适应 */
+}
+
+.preview-audio {
+  display: block;
+  /* 设置为块级元素 */
+  margin-top: 20px;
+  /* 上边距 */
+  max-width: 80%;
+  /* 音频宽度自适应 */
 }
 </style>

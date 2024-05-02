@@ -53,13 +53,14 @@ export default {
       params: { hash: hash, fileName: fileName },
     });
   },
-  // getRoleById(id) {
-  //   return request({
-  //     // url:'/role/'+id,
-  //     url: `/role/${id}`,
-  //     method: "get",
-  //   });
-  // },
+  previewFile(fileId) {
+    return request({
+      url: `/file/preview/${fileId}`,
+      method: "get",
+      responseType: "blob",  // 确保响应是一个Blob对象，适合于文件流
+      skipCustomErrorHandler: true
+    });
+  },
   updateFile(file) {
     return request({
       url: "/file",
