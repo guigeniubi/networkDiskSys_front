@@ -81,8 +81,8 @@
         <el-button type="primary" @click="copyShareInfo">复制信息</el-button>
       </span>
     </el-dialog>
-
-    <el-dialog :visible.sync="showPreviewDialog" title="文件预览" width="80%">
+    <el-dialog :visible.sync="showPreviewDialog" title="文件预览" width="80%"
+      @update:visible="handlePreviewVisibilityChange">
       <div class="preview-container" v-if="previewUrl">
         <img v-if="previewType === 'image'" :src="previewUrl" alt="Image Preview" class="preview-image" />
         <video v-if="previewType === 'video'" controls class="preview-video">
@@ -93,10 +93,11 @@
           <source :src="previewUrl" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
+        <div v-if="previewType === 'other'">
+          文件格式不支持预览
+        </div>
       </div>
-      <div v-else>
-        文件格式不支持预览
-      </div>
+
       <span slot="footer" class="dialog-footer">
         <el-button @click="showPreviewDialog = false">关闭</el-button>
       </span>
@@ -265,7 +266,23 @@ export default {
       if (fileType.startsWith("image/")) return 'image';
       if (fileType.startsWith("video/")) return 'video';
       if (fileType.startsWith("audio/")) return 'audio';
+      if (fileType === "application/pdf") return 'image';
       return 'other'; // 其他类型用其他方式预览
+    },
+    handlePreviewVisibilityChange(visible) {
+      if (!visible) {
+        // 当对话框被隐藏时，停止播放媒体
+        this.stopMediaPlayback();
+      }
+    },
+    stopMediaPlayback() {
+      if (this.previewType === 'audio' || this.previewType === 'video') {
+        const mediaElement = document.querySelector('.preview-container > video, .preview-container > audio');
+        if (mediaElement) {
+          mediaElement.pause();
+          mediaElement.currentTime = 0; // 重置播放时间
+        }
+      }
     },
     deleteFile(file) {
       this.$confirm(`移入后可在7天内恢复该文件, 是否继续?`, '您确认将文件移入回收站?', '提示', {

@@ -194,7 +194,7 @@ export default {
 <style scoped>
 .progress-box {
   box-sizing: border-box;
-  width: 360px;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
