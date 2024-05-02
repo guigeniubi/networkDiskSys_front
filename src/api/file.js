@@ -22,13 +22,24 @@ export default {
   },
   getRecycleBinList(searchModel) {
     return request({
-      url:`/file/recycleBinList`,
-      method:"get",
-      params:{
-        pageNo:searchModel.pageNo,
-        pageSize:searchModel.pageSize,
-      }
-    })
+      url: `/file/recycleBinList`,
+      method: "get",
+      params: {
+        pageNo: searchModel.pageNo,
+        pageSize: searchModel.pageSize,
+      },
+    });
+  },
+  getTopDownloadList(searchModel) {
+    return request({
+      url: "/file/top-downloads",
+      method: "get",
+      params: {
+        pageNo: searchModel.pageNo,
+        pageSize: searchModel.pageSize,
+        fileName: searchModel?.fileName,
+      },
+    });
   },
   uploadSingle(formData) {
     return request({
@@ -57,8 +68,8 @@ export default {
     return request({
       url: `/file/preview/${fileId}`,
       method: "get",
-      responseType: "blob",  // 确保响应是一个Blob对象，适合于文件流
-      skipCustomErrorHandler: true
+      responseType: "blob", // 确保响应是一个Blob对象，适合于文件流
+      skipCustomErrorHandler: true,
     });
   },
   updateFile(file) {

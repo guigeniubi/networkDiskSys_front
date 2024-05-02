@@ -1,8 +1,12 @@
 <template>
   <div class="dashboard-container">
-    <div class="dashboard-text">{{ name }} 欢迎您！</div>
+    <!-- <div class="dashboard-text">{{ name }} 欢迎您！</div> -->
+
     <!-- 保存到我的网盘表单 -->
-    <div class="">
+    <div class="save">
+      <!-- <el-tag>
+        保存到我的网盘
+      </el-tag> -->
       <el-input v-model="shareLink" placeholder="链接" />
       <el-input v-model="sharePassword" placeholder="密码" />
       <el-button @click="addToMyDrive">保存</el-button>
@@ -15,7 +19,7 @@ import * as echarts from 'echarts';
 import { mapGetters } from 'vuex'
 import fileApi from '@/api/file'
 export default {
-  name: 'Dashboard',
+  // name: 'Dashboard',
   mounted() {
     this.initChart();
   },
@@ -27,11 +31,11 @@ export default {
 
     };
   },
-  computed: {
-    ...mapGetters([
-      'name'
-    ])
-  },
+  // computed: {
+  //   ...mapGetters([
+  //     'name'
+  //   ])
+  // },
   methods: {
     async addToMyDrive() {
       try {

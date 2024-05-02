@@ -1,24 +1,5 @@
 <template>
   <div>
-    <!-- 侧边栏 -->
-    <el-drawer title="文件上传" :visible="showSidebar" direction="ltr" :before-close="beforeClose">
-      <!-- 文件上传组件 -->
-      <FileUploadComponent />
-    </el-drawer>
-    <!--搜索栏-->
-    <el-card id="search">
-      <el-row><!--24分-->
-        <el-col :span="4">
-          <el-button type="primary" @click="showUploadSidebar">上传<i
-              class="el-icon-upload el-icon--right"></i></el-button></el-col>
-        <el-col :span="20" align="right">
-          <el-input v-model="searchModel.fileName" placeholder="文件名" clearable></el-input>
-          <el-button @click='getFileList' type="primary" round icon="el-icon-search">查询</el-button></el-col>
-
-      </el-row>
-    </el-card>
-
-
     <!--结果列表-->
     <el-card>
       <el-table :data="fileList" stripe style="width: 100%">
@@ -27,60 +8,22 @@
             <!-- (pageNo-1)*pageSize+index+1 -->
             {{ (searchModel.pageNo - 1) * searchModel.pageSize + scope.$index + 1 }}
           </template>
-
         </el-table-column>
-
         <el-table-column prop="fileName" label="文件名" width="260">
-          <template slot-scope="scope">
-            <template v-if="!scope.row.editing">
-              {{ scope.row.fileName }}
-            </template>
-            <template v-if="scope.row.editing">
-              <el-input v-model="scope.row.newFileName" size="mini"></el-input>
-
-            </template>
-            <el-popover ref="popover" trigger="click" placement="top-start" v-model="scope.row.popoverVisible">
-              <div>
-                <p>重命名</p>
-                <div style="text-align: right; margin-top: 10px;">
-                  <el-button size="mini" type="primary" @click="saveRename(scope.row)">确认</el-button>
-                  <el-button size="mini" @click="cancelEdit(scope.row)">取消</el-button>
-                </div>
-              </div>
-            </el-popover>
-          </template>
         </el-table-column>
-        <el-table-column prop="updateTime" label="修改时间">
+        <el-table-column prop="downloadCount" label="下载次数">
         </el-table-column>
         <el-table-column prop="fileSize" label="大小">
         </el-table-column>
         <el-table-column label="操作">
           <template slot-scope="scope">
             <el-button type="info" icon="el-icon-view" size="mini" circle @click="handlePreview(scope.row)"></el-button>
-            <el-button @click="toggleEdit(scope.row)" type="primary" icon="el-icon-edit" size="mini" circle></el-button>
-            <el-button @click="shareFile(scope.row.fileId)" type="primary" icon="el-icon-share" size="mini"
-              circle></el-button>
             <el-button @click="download(scope.row.fileId)" type="primary" icon="el-icon-download" size="mini"
-              circle></el-button>
-            <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
               circle></el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
-    <!--分页组件-->
-    <el-pagination @size-change="handleSizeChange" @current-change="handleCurrentChange"
-      :current-page="searchModel.pageNo" :page-sizes="[5, 10, 20, 50]" :page-size="searchModel.pageSize"
-      layout="total, sizes, prev, pager, next, jumper" :total="total">
-    </el-pagination>
-    <el-dialog title="分享链接" :visible.sync="showShareDialog" width="30%" :before-close="handleClose">
-      <div>分享链接: <el-input v-model="shareLink" readonly /></div>
-      <div>分享密码: <el-input v-model="sharePassword" readonly /></div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="showShareDialog = false">取消</el-button>
-        <el-button type="primary" @click="copyShareInfo">复制信息</el-button>
-      </span>
-    </el-dialog>
     <el-dialog :visible.sync="showPreviewDialog" title="文件预览" width="80%"
       @update:visible="handlePreviewVisibilityChange">
       <div class="preview-container" v-if="previewUrl">
@@ -93,19 +36,14 @@
           <source :src="previewUrl" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
-
       </div>
       <div v-if="previewType === 'other'">
         该文件格式暂时不支持预览
       </div>
-
       <span slot="footer" class="dialog-footer">
         <el-button @click="showPreviewDialog = false">关闭</el-button>
       </span>
     </el-dialog>
-
-
-
   </div>
 
 </template>
@@ -114,12 +52,7 @@
 import fileApi from '@/api/file'
 import roleApi from '@/api/roleManager'
 import menuApi from '@/api/menuManger'
-import FileUploadComponent from "@/components/FileUploadComponent.vue";
-
 export default {
-  components: {
-    FileUploadComponent
-  },
   data() {
     return {
       showPreviewDialog: false,
@@ -138,16 +71,8 @@ export default {
       searchModel: {
         pageNo: 1,
         pageSize: 10,
-        fileType: "application"
       },
       fileList: [],
-      rules: {
-        roleName: [
-          { required: true, message: '请输入角色名称', trigger: 'blur' },
-          { min: 2, max: 20, message: '长度在2  到 20 个字符', trigger: 'blur' }
-        ],
-
-      },
       showSidebar: false, // 控制侧边栏的显示与隐藏
       showShareDialog: false, // 控制分享对话框的显示
       shareLink: '', // 存储生成的分享链接
@@ -155,54 +80,8 @@ export default {
     }
   },
   methods: {
-    // 切换编辑状态
-    toggleEdit(row) {
-      if (!row.editing) {
-        this.enterEdit(row);
-        row.popoverVisible = true;
-      } else {
-        row.editing = false;
-        row.popoverVisible = false;
-        // 在取消编辑时，恢复原始文件名
-      }
-    },
-    // 进入编辑状态
-    enterEdit(row) {
-      this.$set(row, 'editing', true);
-
-    },
-    // 保存修改
-    saveRename(row) {
-      let fileId = row.fileId;
-      let newFileName = row.newFileName;
-
-      fileApi.saveRename(fileId, newFileName)
-        .then(res => {
-          this.$message({
-            type: 'success',
-            message: res.message
-          });
-          row.editing = false;
-          row.popoverVisible = false;
-          // 刷新文件列表
-          this.getFileList();
-        })
-        .catch(error => {
-          this.$message.error('重命名失败：' + error.message);
-        });
-    },
-    cancelEdit(row) {
-      row.editing = false;
-      row.popoverVisible = false;
-    },
-    getAllMenu() {
-      menuApi.getAllMenu().then(response => {
-        this.menuList = response.data;
-      });
-    }
-    ,
-    getFileList() {
-      fileApi.getFileList(this.searchModel).then(response => {
+    getTopDownloadList() {
+      fileApi.getTopDownloadList(this.searchModel).then(response => {
         this.fileList = response.data.rows;
         this.total = response.data.total;
       });
@@ -222,7 +101,7 @@ export default {
               type: 'success'
             });
             this.dialogFormVisible = false;
-            this.getFileList();
+            this.getTopDownloadList();
 
           });
         }
@@ -241,11 +120,11 @@ export default {
 
     handleSizeChange(pageSize) {
       this.searchModel.pageSize = pageSize;
-      this.getFileList();
+      this.getTopDownloadList();
     },
     handleCurrentChange(pageNo) {
       this.searchModel.pageNo = pageNo;
-      this.getFileList();
+      this.getTopDownloadList();
     },
     handlePreview(row) {
       const fileType = this.getFileType(row.fileType); // 根据文件类型选择预览方式
@@ -303,7 +182,7 @@ export default {
             type: 'success',
             message: response.message
           });
-          this.getFileList()
+          this.getTopDownloadList()
         })
       }).catch(() => {
         this.$message({
@@ -318,7 +197,7 @@ export default {
     // 侧边栏关闭前的回调
     beforeClose(done) {
       this.showSidebar = false;
-      this.getFileList()
+      this.getTopDownloadList()
       done();
     },
     shareFile(fileId) {
@@ -358,12 +237,9 @@ export default {
       link.click(); // 模拟点击实现下载
       document.body.removeChild(link); // 下载后移除元素
     },
-
-
   },
   created() {
-    this.getFileList();
-    this.getAllMenu();
+    this.getTopDownloadList();
   },
 
 };

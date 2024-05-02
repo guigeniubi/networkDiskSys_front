@@ -93,9 +93,10 @@
           <source :src="previewUrl" type="audio/mpeg">
           Your browser does not support the audio element.
         </audio>
-        <div v-if="previewType === 'other'">
-          文件格式不支持预览
-        </div>
+
+      </div>
+      <div v-if="previewType === 'other'">
+        该文件格式暂时不支持预览
       </div>
 
       <span slot="footer" class="dialog-footer">
@@ -248,19 +249,26 @@ export default {
     },
     handlePreview(row) {
       const fileType = this.getFileType(row.fileType); // 根据文件类型选择预览方式
-      fileApi.previewFile(row.fileId)
-        .then(response => {
-          const url = window.URL.createObjectURL(new Blob([response.data], { type: row.fileType }));
-          console.log(url);
-          this.previewUrl = url;
-          this.previewType = fileType;
-          console.log(fileType);
-          this.showPreviewDialog = true;
-        })
-        .catch(error => {
-          console.error("Error during file preview:", error);
-          this.$message.error(`文件预览失败: ${error.message || '未知错误'}`);
-        });
+      console.log(fileType);
+      if (fileType !== "other") {
+        fileApi.previewFile(row.fileId)
+          .then(response => {
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: row.fileType }));
+            console.log(url);
+            this.previewUrl = url;
+            this.previewType = fileType;
+            console.log(fileType);
+            this.showPreviewDialog = true;
+          })
+          .catch(error => {
+            console.error("Error during file preview:", error);
+            this.$message.error(`文件预览失败: ${error.message || '未知错误'}`);
+          });
+      } else {
+        this.previewType = fileType;
+        this.showPreviewDialog = true;
+      }
+
     },
     getFileType(fileType) {
       if (fileType.startsWith("image/")) return 'image';
