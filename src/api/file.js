@@ -79,11 +79,11 @@ export default {
       data: file,
     });
   },
-  restoreFile(fileId){
+  restoreFile(fileId) {
     return request({
-      url:`/file/restore/${fileId}`,
-      method:"put",
-    })
+      url: `/file/restore/${fileId}`,
+      method: "put",
+    });
   },
   saveRole(role) {
     if (role.roleId == null && role.roleId == undefined) {
@@ -129,6 +129,12 @@ export default {
       url: `/file/download/${fileId}`,
       method: "get",
       responseType: "blob",
+    });
+  },
+  getHadoopInfo() {
+    return request({
+      url: `/file/userSpace`,
+      method: "get",
     });
   },
 };
