@@ -24,6 +24,7 @@
         </el-table-column>
       </el-table>
     </el-card>
+
     <el-dialog :visible.sync="showPreviewDialog" title="文件预览" width="80%"
       @update:visible="handlePreviewVisibilityChange">
       <div class="preview-container" v-if="previewUrl">

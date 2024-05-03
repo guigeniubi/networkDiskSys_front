@@ -79,6 +79,12 @@ export default {
       data: file,
     });
   },
+  restoreFile(fileId){
+    return request({
+      url:`/file/restore/${fileId}`,
+      method:"put",
+    })
+  },
   saveRole(role) {
     if (role.roleId == null && role.roleId == undefined) {
       return this.addRole(role);

@@ -22,24 +22,6 @@
         </el-table-column>
 
         <el-table-column prop="fileName" label="文件名" width="260">
-          <template slot-scope="scope">
-            <template v-if="!scope.row.editing">
-              {{ scope.row.fileName }}
-            </template>
-            <template v-if="scope.row.editing">
-              <el-input v-model="scope.row.newFileName" size="mini"></el-input>
-
-            </template>
-            <el-popover ref="popover" trigger="click" placement="top-start" v-model="scope.row.popoverVisible">
-              <div>
-                <p>重命名</p>
-                <div style="text-align: right; margin-top: 10px;">
-                  <el-button size="mini" type="primary" @click="saveRename(scope.row)">确认</el-button>
-                  <el-button size="mini" @click="cancelEdit(scope.row)">取消</el-button>
-                </div>
-              </div>
-            </el-popover>
-          </template>
         </el-table-column>
 
         <el-table-column prop="expiredTime" label="到期时间">
@@ -50,7 +32,8 @@
           <template slot-scope="scope">
             <el-button @click="deleteFile(scope.row)" type="danger" icon="el-icon-delete" size="mini"
               circle></el-button>
-
+            <el-button @click="restoreFile(scope.row)" type="info" icon="el-icon-refresh-left" size="mini"
+              circle></el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -60,14 +43,6 @@
       :current-page="searchModel.pageNo" :page-sizes="[5, 10, 20, 50]" :page-size="searchModel.pageSize"
       layout="total, sizes, prev, pager, next, jumper" :total="total">
     </el-pagination>
-    <el-dialog title="分享链接" :visible.sync="showShareDialog" width="30%" :before-close="handleClose">
-      <div>分享链接: <el-input v-model="shareLink" readonly /></div>
-      <div>分享密码: <el-input v-model="sharePassword" readonly /></div>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="showShareDialog = false">取消</el-button>
-        <el-button type="primary" @click="copyShareInfo">复制信息</el-button>
-      </span>
-    </el-dialog>
 
 
   </div>
@@ -150,10 +125,29 @@ export default {
         });
       });
     },
+    restoreFile(file) {
+      this.$confirm(`您确认恢复文件${file.fileName}?`, '此操作将恢复该文件, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        fileApi.restoreFile(file.fileId).then(response => {
+          this.$message({
+            type: 'success',
+            message: response.message
+          });
+          this.getRecycleBinList()
+        })
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消恢复!'
+        });
+      });
+    },
   },
   created() {
     this.getRecycleBinList();
-    this.getAllMenu();
   },
 
 };

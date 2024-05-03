@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-container">
-    <!-- <div class="dashboard-text">{{ name }} 欢迎您！</div> -->
 
     <!-- 保存到我的网盘表单 -->
     <div class="save">
@@ -15,11 +14,8 @@
 
 </template>
 <script>
-import * as echarts from 'echarts';
-import { mapGetters } from 'vuex'
 import fileApi from '@/api/file'
 export default {
-  // name: 'Dashboard',
   mounted() {
     this.initChart();
   },
@@ -31,11 +27,7 @@ export default {
 
     };
   },
-  // computed: {
-  //   ...mapGetters([
-  //     'name'
-  //   ])
-  // },
+
   methods: {
     async addToMyDrive() {
       try {

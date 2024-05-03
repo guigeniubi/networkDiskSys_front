@@ -1,5 +1,7 @@
 <template>
   <div class="dashboard">
+    <div class="dashboard-text">{{ name }} 欢迎您！</div>
+
     <div class="charts">
       <div class="chart" id="hadoop-chart-1"></div>
       <div class="chart" id="hadoop-chart-2"></div>
@@ -17,10 +19,14 @@
 <script>
 // 导入图表库
 import ECharts from 'echarts';
+import * as echarts from 'echarts';
+import { mapGetters } from 'vuex'
 
 export default {
   data() {
     return {
+      name: 'Dashboard',
+
       hadoopStats: {
         '总容量': '10GB',
         '已使用': '416.61MB',
@@ -40,7 +46,12 @@ export default {
       chart.setOption({
         // 图表配置和数据
       });
-    }
+    },
+    computed: {
+      ...mapGetters([
+        'name'
+      ])
+    },
   }
 }
 </script>
@@ -59,5 +70,16 @@ export default {
 .stats {
   display: flex;
   flex-direction: column;
+}
+
+.dashboard {
+  &-container {
+    margin: 30px;
+  }
+
+  &-text {
+    font-size: 30px;
+    line-height: 46px;
+  }
 }
 </style>
